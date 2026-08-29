@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" manifest="cache.appcache">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>DeadRabbit WebKit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a0033 0%, #0d001a 40%, #001040 100%);
+            color: #e8eaf6;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* ── HEADER ── */
+        #brand {
+            text-align: center;
+            padding: 28px 20px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(6px);
+        }
+
+        #brand h1 {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: clamp(1.6rem, 5vw, 2.6rem);
+            letter-spacing: 0.18em;
+            color: #ffffff;
+            text-shadow:
+                0 0 18px rgba(160, 80, 255, 0.75),
+                0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        #brand .tagline {
+            margin-top: 6px;
+            font-size: 0.78rem;
+            letter-spacing: 0.22em;
+            color: rgba(180, 160, 255, 0.65);
+            text-transform: uppercase;
+        }
+
+        /* ── PAGE LAYOUT ── */
+        #page {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 16px 60px;
+            min-height: calc(100vh - 110px);
+        }
+
+        /* ── MAIN CONTAINER ── */
+        #wrap {
+            width: 100%;
+            max-width: 560px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px 28px;
+            backdrop-filter: blur(10px);
+            box-shadow:
+                0 8px 40px rgba(80, 0, 160, 0.35),
+                0 2px 10px rgba(0, 0, 50, 0.5);
+        }
+
+        /* ── STATUS ELEMENTS ── */
+        #state {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 0.04em;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #det {
+            font-size: 0.82rem;
+            color: rgba(200, 206, 230, 0.7);
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        #det b {
+            color: #d0d8ff;
+            font-weight: 600;
+        }
+
+        #cache {
+            font-size: 0.78rem;
+            color: rgba(160, 170, 200, 0.55);
+            min-height: 18px;
+            margin-bottom: 4px;
+            letter-spacing: 0.03em;
+        }
+
+        #cache.cacheok {
+            color: #7fd0a0;
+        }
+
+        /* ── STATUS COLORS ── */
+        .ok {
+            color: #7fd0a0;
+        }
+
+        .bad {
+            color: #e07070;
+        }
+
+        .warn {
+            color: #e0c870;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* ── FOOTER NOTE ── */
+        #page-footer {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.72rem;
+            color: rgba(180, 160, 255, 0.35);
+            letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header id="brand">
+        <h1>DeadRabbit WebKit</h1>
+        <div class="tagline">PS4 Exploit Loader</div>
+    </header>
+
+    <!-- PAGE WRAPPER -->
+    <div id="page">
+        <div id="wrap">
+            <div id="state">detecting firmware...</div>
+            <div id="det"></div>
+            <hr class="divider">
+            <div id="cache"></div>
+        </div>
+    </div>
+
+    <div id="page-footer">deadrabbit &mdash; webkit exploit chain</div>
+
+    <script>
+        (function () {
+            var stateEl = document.getElementById("state");
+            var detEl = document.getElementById("det");
+            var cacheEl = document.getElementById("cache");
+            function setState(t, c) { stateEl.textContent = t; stateEl.className = c || ""; }
+            function setCache(t, ok) { cacheEl.textContent = t; cacheEl.className = ok ? "cacheok" : ""; }
+            var params = new URLSearchParams(location.search);
+
+            var key = null, fwnum = null;
+            var m = /PlayStation\s+4[\/\ ](\d+)\.(\d+)/.exec(navigator.userAgent);
+            if (m) {
+                var minor = parseInt(m[2], 16);
+                var ms = minor.toString(16);
+                if (ms.length < 2) ms = "0" + ms;
+                key = m[1] + "." + ms;
+                fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
+            }
+            var bug = null, why = "";
+            var forced = params.get("bug");
+            if (forced === "lapse" || forced === "poops") {
+                bug = forced; why = "forced via ?bug=" + forced;
+            } else if (!key) {
+                why = "user-agent is not a PlayStation 4";
+            } else if (fwnum <= 1202) {
+                bug = "lapse"; why = key + " <= 12.02";
+            } else if (fwnum >= 1250) {
+                bug = "poops"; why = key + " >= 12.50";
+            } else {
+                why = key + " -- no working bug (lapse ends at 12.02, poops needs 12.50)";
+            }
+            detEl.innerHTML = "firmware <b>" + (key || "unknown") + "</b>"
+                + " &middot; bug <b>" + (bug || "none") + "</b> &middot; " + why;
+
+            if (!bug) { setState("UNSUPPORTED FIRMWARE", "bad"); return; }
+
+            var target = (bug === "lapse" ? "run_lapse.html" : "run_poops.html")
+                + location.search;
+            function go() {
+                setState("loading " + bug + " chain...", "warn");
+                location.replace(target);
+            }
+
+            function waitForTap(msg, action) {
+                setState(msg, "warn");
+                function fire() {
+                    window.removeEventListener("click", fire);
+                    window.removeEventListener("keydown", fire);
+                    action();
+                }
+                window.addEventListener("click", fire);
+                window.addEventListener("keydown", fire);
+            }
+
+            var ac = window.applicationCache;
+            if (!ac || !document.documentElement.hasAttribute("manifest")) {
+                go();
+            } else if (!navigator.onLine) {
+                setCache("offline -- from cache", true);
+                go();
+            } else if (ac.status === ac.IDLE) {
+                setCache("cached", true);
+                go();
+            } else if (ac.status === ac.UPDATEREADY) {
+                try { ac.swapCache(); } catch (e) { }
+                setCache("update downloaded", true);
+                waitForTap("UPDATE READY -- press X or tap to reload & run",
+                    function () { location.reload(); });
+            } else {
+                setCache("checking cache...");
+                ac.addEventListener("downloading",
+                    function () { setCache("caching for offline (first run)..."); }, false);
+                ac.addEventListener("progress", function (e) {
+                    if (e && e.total)
+                        setCache("caching " + Math.round((e.loaded / e.total) * 100) + "%");
+                }, false);
+
+                ac.addEventListener("cached", function () {
+                    setCache("cached for offline use", true);
+                    waitForTap("CACHED (first run) -- press X or tap to run", go);
+                }, false);
+                ac.addEventListener("updateready", function () {
+                    try { ac.swapCache(); } catch (e) { }
+                    setCache("update downloaded", true);
+                    waitForTap("UPDATE READY -- press X or tap to reload & run",
+                        function () { location.reload(); });
+                }, false);
+
+                ac.addEventListener("noupdate", function () {
+                    setCache("cached -- offline ready", true);
+                    go();
+                }, false);
+                ac.addEventListener("error", function () {
+                    setCache("cache unavailable");
+                    waitForTap("CACHE FAILED -- press X or tap to run anyway", go);
+                }, false);
+                ac.addEventListener("obsolete", function () {
+                    setCache("cache obsolete");
+                    waitForTap("CACHE OBSOLETE -- press X or tap to run", go);
+                }, false);
+            }
+        })();
+    </script>
+</body>
+
+</html>
